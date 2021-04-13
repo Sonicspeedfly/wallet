@@ -2,15 +2,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/Sonicspeedfly/wallet/v1/pkg/wallet"
+	"github.com/Sonicspeedfly/wallet/v1.1.0/pkg/wallet"
+	"github.com/Sonicspeedfly/wallet/v1.1.0/pkg/types"
 )
 func main() {
-	svc := &wallet.Service{}
-	account, err := svc.RegisterAccount("+992936888007")
-	account, err = svc.FindAccountByID(1)
-	if err != nil {
-		fmt.Println("Аккаунт пользователя не найден")
-		return
+	s := wallet.Service{}
+	phone := types.Phone("+992936888007")
+	account, err := s.RegisterAccount(phone)
+	err = s.Deposit(account.ID, 10_000_00)
+	if err != nil{
+		return 
+		}
+		fmt.Println(account.Balance)
 	}
-	fmt.Println(account.ID)
-}

@@ -1,4 +1,4 @@
-module github.com/Sonicspeedfly/wallet/v1
+module github.com/Sonicspeedfly/wallet/v1.1.0
 
 go 1.16
 
