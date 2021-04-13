@@ -11,19 +11,21 @@ type PaymentStatus string
 
 //Предопределённые статусы платежа
 const (
-	StatusOk PaymentStatus = "OK"
-	StatusFail PaymentStatus = "FAIL"
-	StatusInProgress PaymentStatus = "INPROGRESS"
+	PaymentStatusOk PaymentStatus = "OK"
+	PaymentStatusFail PaymentStatus = "FAIL"
+	PaymentStatusInProgress PaymentStatus = "INPROGRESS"
 )
 
 //Payment представляет информацию о платеже
 type Payment struct {
-	ID int64
+	ID string
+	AccountID int64
 	Amount Money 
 	Category PaymentCategory
 	Status PaymentStatus
 }
 
+//Phone номер телефона
 type Phone string
 
 //Account представляет информацию о счёте пользователя
