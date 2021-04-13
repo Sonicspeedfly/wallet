@@ -157,3 +157,21 @@ func (s *Service) AddAccountWithBalance(phone types.Phone, balance types.Money) 
   }
   return account, nil
 }
+
+//Repeat ##**##
+func (s *Service) Repeat(paymentID string) (*types.Payment, error) {
+  payment, err := s.FindPaymentByID(paymentID)  
+  if err != nil {
+    return nil, ErrAccountNotFound
+  }
+  paymentID = uuid.New().String()
+  payment = &types.Payment{
+    ID: paymentID,
+    Amount: payment.Amount,
+    AccountID: payment.AccountID,
+    Category: payment.Category,
+    Status: payment.Status,
+  }
+  s.payments = append(s.payments, payment)
+  return payment, nil
+}
