@@ -1,36 +1,36 @@
 package types
 
-//Money представляет собой денежную сумму в минимальной денежных еденицах (центы, копейки, дирамы и т.д) .
+// Money представляет собой денежную сумму в минималных единиц (центы, копейки, дирамы и т.д).
 type Money int64
 
-//PaymentCategory представляет собой категорию, в уоторой был совершён плтёж (авто, аптеки, рестораны и т.д.) .
+// PaymentCategory представляет собой категорию, в которию был совершен платёж (авто, аптека, рестараны и т.д).
 type PaymentCategory string
 
-//PaymentStatus представляет собой платёж
+// PaymentStatus представляет статус плятежей.
 type PaymentStatus string
 
-//Предопределённые статусы платежа
+// Предопределеные статусы платежа.
 const (
-	PaymentStatusOk PaymentStatus = "OK"
-	PaymentStatusFail PaymentStatus = "FAIL"
+	PaymentStatusOk         PaymentStatus = "OK"
+	PaymentStatusFail       PaymentStatus = "FAIL"
 	PaymentStatusInProgress PaymentStatus = "INPROGRESS"
 )
 
-//Payment представляет информацию о платеже
+// Payment представляет игформацию о платиже.
 type Payment struct {
-	ID string
+	ID        string
 	AccountID int64
-	Amount Money 
-	Category PaymentCategory
-	Status PaymentStatus
+	Amount    Money
+	Category  PaymentCategory
+	Status    PaymentStatus
 }
 
-//Phone номер телефона
+// Phone представляет информацию о номере телефона
 type Phone string
 
-//Account представляет информацию о счёте пользователя
+// Account представляет информацию о счёте пользлователя.
 type Account struct {
-	ID int64
-	Phone Phone
+	ID      int64
+	Phone   Phone
 	Balance Money
 }
