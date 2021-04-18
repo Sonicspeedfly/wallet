@@ -221,27 +221,27 @@ func (s *Service) PayFromFavorite(favoriteID string) (*types.Payment, error) {
 
 //ExportToFile экспортирует аккаунт в файл
 func (s *Service) ExportToFile(path string) error {
-	file, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer func()  {
-		if err := file.Close(); err != nil {
-			log.Print(err)
-		}
-	}()
-	var id int64
-	var phone string
-	var balance int64
-	for _, account := range s.accounts {
-		id = account.ID
-		phone = string(account.Phone)
-		balance = int64(account.Balance)
-	_, err = file.Write([]byte(strconv.FormatInt(int64(id),10)+(";")+(phone)+(";")+(strconv.FormatInt(int64(balance),10))+("|")))
-	if err != nil {
-		return err
-	}
+  file, err := os.Create(path)
+  if err != nil {
+    return err
+  }
+  defer func()  {
+    if err := file.Close(); err != nil {
+      log.Print(err)
+    }
+  }()
+  var id int64
+  var phone string
+  var balance int64
+  for _, account := range s.accounts {
+    id = account.ID
+    phone = string(account.Phone)
+    balance = int64(account.Balance)
+  _, err = file.Write([]byte(strconv.FormatInt(int64(id),10)+(";")+(phone)+(";")+(strconv.FormatInt(int64(balance),10))+("|")))
+  if err != nil {
+    return err
+  }
 }
 
-	return nil
+  return nil
 }
