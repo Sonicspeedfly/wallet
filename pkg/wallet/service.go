@@ -1,8 +1,7 @@
 package wallet
 
 import (
-	"errors"
-	"log"
+	"errors"	
 	"os"
 	"strconv"
 
@@ -225,11 +224,6 @@ func (s *Service) ExportToFile(path string) error {
 	if err != nil {
 		return err
 	}
-	defer func()  {
-		if cerr := file.Close(); cerr != nil {
-			log.Print(cerr)
-		}
-	}()
 	var id int64
 	var phone string
 	var balance int64
