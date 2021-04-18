@@ -226,8 +226,8 @@ func (s *Service) ExportToFile(path string) error {
 		return err
 	}
 	defer func()  {
-		if cerr := file.Close(); cerr != nil {
-			log.Print(cerr)
+		if err := file.Close(); err != nil {
+			log.Print(err)
 		}
 	}()
 	var id int64
@@ -237,30 +237,11 @@ func (s *Service) ExportToFile(path string) error {
 		id = account.ID
 		phone = string(account.Phone)
 		balance = int64(account.Balance)
-	}
-	_, err = file.Write([]byte(strconv.FormatInt(int64(id),10)))
-	if err != nil {
-		return err
-	} 
-	_, err = file.Write([]byte(";"))
-	if err != nil {
-		return err
-	} 
-	_, err = file.Write([]byte(phone))
-	if err != nil {
-		return err
-	} 
-	_, err = file.Write([]byte(";"))
-	if err != nil {
-		return err
-	} 
-	_, err = file.Write([]byte(strconv.FormatInt(int64(balance),10)))
+	_, err = file.Write([]byte(strconv.FormatInt(int64(id),10)+(";")+(phone)+(";")+(strconv.FormatInt(int64(balance),10))+("|")))
 	if err != nil {
 		return err
 	}
-	_, err = file.Write([]byte("|"))
-	if err != nil {
-		return err
-	} 
-	return err
+}
+
+	return nil
 }
