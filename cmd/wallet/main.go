@@ -8,5 +8,6 @@ func main() {
 	svc := wallet.Service{}
 	svc.RegisterAccount("+9920000001")
 	file := svc.ExportToFile("massage.txt")
-	fmt.Print(file)
+	read := svc.ImportToFile("massage.txt")
+	fmt.Print(file,read)
 }

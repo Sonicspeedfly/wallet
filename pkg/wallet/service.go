@@ -245,3 +245,31 @@ func (s *Service) ExportToFile(path string) error {
 
   return nil
 }
+
+//ImportToFile импортирует даные из файла
+func (s *Service) ImportToFile(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+	  return err
+	}
+	defer func()  {
+	  if err := file.Close(); err != nil {
+		log.Print(err)
+	  }
+	}()
+	var id int64
+	var phone string
+	var balance int64
+	for _, account := range s.accounts {
+	  id = account.ID
+	  phone = string(account.Phone)
+	  balance = int64(account.Balance)
+	_, err = file.Read([]byte(strconv.FormatInt(int64(id),10)+(";")+(phone)+(";")+(strconv.FormatInt(int64(balance),10))+("|")))
+	if err != nil {
+	  return err
+	}
+  }
+  
+	return nil
+  }
+  
