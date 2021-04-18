@@ -2,6 +2,9 @@ package wallet
 
 import (
 	"errors"
+	"log"
+	"os"
+	"strconv"
 
 	"github.com/Sonicspeedfly/wallet/v1.1.0/pkg/types"
 	"github.com/google/uuid"
@@ -214,4 +217,50 @@ func (s *Service) PayFromFavorite(favoriteID string) (*types.Payment, error) {
 	}
 
 	return payment, nil
+}
+
+//ExportToFile экспортирует аккаунт в файл
+func (s *Service) ExportToFile(path string) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer func()  {
+		if cerr := file.Close(); cerr != nil {
+			log.Print(cerr)
+		}
+	}()
+	var id int64
+	var phone string
+	var balance int64
+	for _, account := range s.accounts {
+		id = account.ID
+		phone = string(account.Phone)
+		balance = int64(account.Balance)
+	}
+	_, err = file.Write([]byte(strconv.FormatInt(int64(id),10)))
+	if err != nil {
+		return err
+	} 
+	_, err = file.Write([]byte(";"))
+	if err != nil {
+		return err
+	} 
+	_, err = file.Write([]byte(phone))
+	if err != nil {
+		return err
+	} 
+	_, err = file.Write([]byte(";"))
+	if err != nil {
+		return err
+	} 
+	_, err = file.Write([]byte(strconv.FormatInt(int64(balance),10)))
+	if err != nil {
+		return err
+	}
+	_, err = file.Write([]byte("|"))
+	if err != nil {
+		return err
+	} 
+	return nil
 }
