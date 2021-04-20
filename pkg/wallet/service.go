@@ -278,6 +278,7 @@ func (s *Service) ImportFromFile(path string) error {
 
 		as := strings.Split(data, "|")
 		for _, a := range as {
+			a = strings.TrimSuffix(a, "|")
 			bs := strings.Split(a, ";")
 			ids := strings.TrimSuffix(bs[0], ";")
 			ida, err :=  strconv.Atoi(ids)
