@@ -2,9 +2,11 @@ package wallet
 
 import (
 	"errors"
+	"io"
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/Sonicspeedfly/wallet/v1.1.0/pkg/types"
 	"github.com/google/uuid"
@@ -246,7 +248,7 @@ func (s *Service) ExportToFile(path string) error {
   return nil
 }
 
-//ImportToFile импортирует даные из файла
+//ImportFromFile импортирует данные из файла
 func (s *Service) ImportFromFile(path string) error {
 	file, err := os.Open(path)
 	if err != nil {
@@ -257,18 +259,41 @@ func (s *Service) ImportFromFile(path string) error {
 		log.Print(err)
 	  }
 	}()
-	var id int64
-	var phone string
-	var balance int64
-	for _, account := range s.accounts {
-	  id = account.ID
-	  phone = string(account.Phone)
-	  balance = int64(account.Balance)
-	_, err = file.Read([]byte(strconv.FormatInt(int64(id),10)+(";")+(phone)+(";")+(strconv.FormatInt(int64(balance),10))+("|")))
-	if err != nil {
-	  return err
+	content := make([]byte, 0)
+	buf := make([]byte, 4)
+	for {
+		read, err := file.Read(buf)
+		if err == io.EOF{
+			content = append(content, buf[:read]...)
+			break
+		}
+		if err != nil {
+			return err
+		}
+		content = append(content, buf[:read]...)
+		data := string(content)
+		var id int64
+		var phone types.Phone
+		var balance types.Money
+
+		as := strings.Split(data, "|")
+		for _, a := range as {
+			bs := strings.Split(a, ";")
+			ids := strings.TrimSuffix(bs[0], ";")
+			ida, err :=  strconv.Atoi(ids)
+			if err == nil{
+				return err}
+			id = int64(ida)
+			phones := strings.TrimSuffix(bs[1], ";")
+			phone = types.Phone(phones)
+			g, err := strconv.Atoi(bs[2]) 
+			if err == nil{
+				return err}
+			balance = types.Money(g)
+			s.accounts = append(s.accounts, &types.Account{ID: id, Phone: phone, Balance: balance,})
+		}
+		  
 	}
-  }
   
 	return nil
   }

@@ -6,8 +6,12 @@ import (
 )
 func main() {
 	svc := wallet.Service{}
-	svc.RegisterAccount("+9920000001")
+	a, err := svc.RegisterAccount("+9920000001")
+	if err != nil{
+		fmt.Println(wallet.ErrAccountNotFound)
+	}
 	file := svc.ExportToFile("massage.txt")
 	read := svc.ImportFromFile("massage.txt")
 	fmt.Print(file,read)
+	fmt.Println(a)
 }
