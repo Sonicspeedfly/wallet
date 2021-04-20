@@ -278,14 +278,14 @@ func (s *Service) ImportFromFile(path string) error {
 
 		as := strings.Split(data, "|")
 		for _, a := range as {
-			a = strings.TrimSuffix(a, "|")
+			a = strings.Trim(a, "|")
 			bs := strings.Split(a, ";")
-			ids := strings.TrimSuffix(bs[0], ";")
+			ids := strings.Trim(bs[0], ";")
 			ida, err :=  strconv.Atoi(ids)
 			if err == nil{
 				return err}
 			id = int64(ida)
-			phones := strings.TrimSuffix(bs[1], ";")
+			phones := strings.Trim(bs[1], ";")
 			phone = types.Phone(phones)
 			g, err := strconv.Atoi(bs[2]) 
 			if err == nil{
