@@ -248,54 +248,50 @@ func (s *Service) ExportToFile(path string) error {
   return nil
 }
 
-//ImportFromFile импортирует данные из файла
 func (s *Service) ImportFromFile(path string) error {
-	file, err := os.Open(path)
-	if err != nil {
-	  return err
-	}
-	defer func()  {
-	  if err := file.Close(); err != nil {
-		log.Print(err)
-	  }
-	}()
 	content := make([]byte, 0)
 	buf := make([]byte, 4)
+	file, err := os.Open(path)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+			log.Print(cerr)
+		}
+	}()
+
 	for {
 		read, err := file.Read(buf)
-		if err == io.EOF{
-			content = append(content, buf[:read]...)
+		if err == io.EOF {
+			content = append(content, buf[:read]...)	
 			break
 		}
+
 		if err != nil {
+			log.Print(err)
 			return err
 		}
 		content = append(content, buf[:read]...)
-		data := string(content)
-		var id int64
-		var phone types.Phone
-		var balance types.Money
-
-		as := strings.Split(data, "|")
-		for _, a := range as {
-			a = strings.Trim(a, "|")
-			bs := strings.Split(a, ";")
-			ids := strings.Trim(bs[0], ";")
-			ida, err :=  strconv.Atoi(ids)
-			if err == nil{
-				return err}
-			id = int64(ida)
-			phones := strings.Trim(bs[1], ";")
-			phone = types.Phone(phones)
-			g, err := strconv.Atoi(bs[2]) 
-			if err == nil{
-				return err}
-			balance = types.Money(g)
-			s.accounts = append(s.accounts, &types.Account{ID: id, Phone: phone, Balance: balance,})
-		}
-		  
 	}
-  
+
+	data := string(content)
+	
+	rows := strings.Split(data, "|")
+	for _,row := range rows {
+		cols := strings.Split(row, ";")
+		id, _ := strconv.ParseInt(cols[0],10,64)
+		phone := types.Phone(cols[1])
+		balance, _ := strconv.ParseInt(cols[2],10,64)
+		
+		account := &types.Account{
+			ID:      id,
+			Phone:   phone,
+			Balance: types.Money(balance),
+		}
+		s.accounts = append(s.accounts, account)
+	}
+
 	return nil
-  }
-  
+}
