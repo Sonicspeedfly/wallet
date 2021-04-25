@@ -333,24 +333,57 @@ func (s *Service) ImportFromFile(path string) error {
 
 	return nil
 }
-
 //Export экспортировать
 func (s *Service) Export(dir string) error {
-	_, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	err = os.Chdir(dir)
-	if err != nil {
-		return err
-	} 
 	if len(s.accounts) > 0 {
-	s.ExportToFile("accounts.dump")
-	if len(s.payments) > 0{
-		s.ExportToFile("payments.dump")
-	if len(s.favorites) > 0{
-	s.ExportToFile("favorites.dump")
-	}}}
+		file, err := os.OpenFile(dir + "/accounts.dump", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+		defer func() {
+			if cerr := file.Close(); cerr != nil {
+				if err != nil {
+					err = cerr
+					log.Print(err)
+				}
+			}
+		}()
+		fileStr := ""
+		for _, account := range s.accounts {
+			fileStr += fmt.Sprint(account.ID) + ";" + string(account.Phone) + ";" + fmt.Sprint(account.Balance) + "\n"
+		}
+		file.WriteString(fileStr[:len(fileStr)-1])
+	}
+	if len(s.payments) > 0 {
+		file, err := os.OpenFile(dir + "/payments.dump", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+		defer func() {
+			if cerr := file.Close(); cerr != nil {
+				if err != nil {
+					err = cerr
+					log.Print(err)
+				}
+			}
+		}()
+		fileStr := ""
+		for _, payment := range s.payments {
+			fileStr += fmt.Sprint(payment.ID) + ";" + fmt.Sprint(payment.AccountID) + ";" + fmt.Sprint(payment.Amount) + ";" + fmt.Sprint(payment.Category) + ";" + fmt.Sprint(payment.Status) + "\n"
+		}
+		file.WriteString(fileStr[:len(fileStr)-1])
+	}
+	if len(s.favorites) > 0 {
+		file, err := os.OpenFile(dir + "/favorites.dump", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+		defer func() {
+			if cerr := file.Close(); cerr != nil {
+				if err != nil {
+					err = cerr
+					log.Print(err)
+				}
+			}
+		}()
+
+		fileStr := ""
+		for _, favorite := range s.favorites {
+			fileStr += fmt.Sprint(favorite.ID) + ";" + fmt.Sprint(favorite.AccountID) + ";" + favorite.Name + ";" + fmt.Sprint(favorite.Amount) + ";" + fmt.Sprint(favorite.Category) + "\n"
+		}
+		file.WriteString(fileStr[:len(fileStr)-1])
+	}
 	return nil
 }
 
