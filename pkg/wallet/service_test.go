@@ -162,6 +162,115 @@ func TestService_Favorite_success_user(t *testing.T) {
 	}
 }
 
+func TestExportToFile_success(t *testing.T) {
+	svc := Service{}
+	account, err := svc.RegisterAccount("+992000000001")
+	if err != nil {
+		t.Errorf("method RegisterAccount returned not nil error, account => %v", account)
+	}
+	file := svc.ExportToFile("message.txt")
+	if file != nil {
+		t.Errorf("method RegisterAccount returned not nil error, account => %v", account)
+	}
+}
+
+func TestImportFromFile_success(t *testing.T) {
+	svc := Service{}
+	file := svc.ImportFromFile("message.txt")
+	if file != nil {
+		t.Errorf("method RegisterAccount returned not nil error, account => %v", file)
+	}
+}
+
+func TestExport_success(t *testing.T) {
+	svc := Service{}
+
+	account, err := svc.RegisterAccount("+992000000001")
+	if err != nil {
+		t.Errorf("method RegisterAccount returned not nil error, account => %v", account)
+	}
+
+	err = svc.Deposit(account.ID, 100_00)
+	if err != nil {
+		t.Errorf("method Deposit returned not nil error, error => %v", err)
+	}
+
+	payment, err := svc.Pay(account.ID, 10_00, "auto")
+	if err != nil {
+		t.Errorf("Pay() Error() can't pay for an account(%v): %v", account, err)
+	}
+
+	favorite, err := svc.FavoritePayment(payment.ID, "megafon")
+	if err != nil {
+		t.Errorf("FavoritePayment() Error() can't for an favorite(%v): %v", favorite, err)
+	}
+
+	paymentFavorite, err := svc.PayFromFavorite(favorite.ID)
+	if err != nil {
+		t.Errorf("PayFromFavorite() Error() can't for an favorite(%v): %v", paymentFavorite, err)
+	}
+
+	file := svc.Export("./data")
+	if file != nil {
+		t.Errorf("PayFromFavorite() Error() can't for an favorite(%v): %v", paymentFavorite, err)
+	}
+}
+
+func TestImport(t *testing.T) {
+	svc := Service{}
+	file := svc.Export("./data")
+	if file != nil {
+		t.Errorf("PayFromFavorite() Error() can't for an favorite: %v", file)
+	}
+}
+
+func TestExportAccountHistory_success(t *testing.T) {
+	svc := Service{}
+	account, err := svc.RegisterAccount("+992000000001")
+	if err != nil {
+		t.Errorf("method RegisterAccount returned not nil error, account => %v", account)
+	}
+
+	err = svc.Deposit(account.ID, 100_00)
+	if err != nil {
+		t.Errorf("method Deposit returned not nil error, error => %v", err)
+	}
+
+	payment, err := svc.Pay(account.ID, 10_00, "auto")
+	if err != nil {
+		t.Errorf("Pay() Error() can't pay for an account(%v): %v", account, err)
+	}
+	file, err := svc.ExportAccountHistory(account.ID)
+	if err != nil {
+		t.Errorf("Pay() Error() can't pay for an account(%v): %v", payment, file)
+	}
+}
+
+func TestHistoryToFiles(t *testing.T) {
+	svc := Service{}
+	account, err := svc.RegisterAccount("+992000000001")
+	if err != nil {
+		t.Errorf("method RegisterAccount returned not nil error, account => %v", account)
+	}
+
+	err = svc.Deposit(account.ID, 100_00)
+	if err != nil {
+		t.Errorf("method Deposit returned not nil error, error => %v", err)
+	}
+
+	payment, err := svc.Pay(account.ID, 10_00, "auto")
+	if err != nil {
+		t.Errorf("Pay() Error() can't pay for an account(%v): %v", account, err)
+	}
+	file, err := svc.ExportAccountHistory(account.ID)
+	if err != nil {
+		t.Errorf("Pay() Error() can't pay for an account(%v): %v", payment, err)
+	}
+	files := svc.HistoryToFiles(file, "./data", 1)
+	if files != nil {
+		t.Errorf("Pay() Error() can't pay for an account(%v): %v", payment, err)
+	}
+}
 func BenchmarkSumPayments(b *testing.B) {
 	svc := Service{}
 

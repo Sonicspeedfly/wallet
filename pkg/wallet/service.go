@@ -238,45 +238,12 @@ func (s *Service) ExportToFile(path string) error {
 			log.Print(cerr)
 		}
 	}()
-	
-	if path == "accounts.dump"{for _, acc := range s.accounts {
-		id := strconv.Itoa(int(acc.ID))
-		phone := string(acc.Phone)
-		balance := strconv.Itoa(int(acc.Balance))
-		accountStr +=  id + ";" + phone + ";" + balance + "\n"
-		
-	}
-}
 
-	if path == "payments.dump"{for _, payment := range s.payments {
-		id := string(payment.ID)
-		accountID := strconv.Itoa(int(payment.AccountID))
-		amount := strconv.Itoa(int(payment.Amount))
-		category := string(payment.Category)
-		status := string(payment.Status)
-		accountStr +=  id + ";" + accountID + ";" + amount + ";" + category + ";" + status + "\n"
-	}
-}
-
-	
-	if path == "favorites.dump"{
-		for _, favorite := range s.favorites {
-		id := string(favorite.ID)
-		accountID := strconv.Itoa(int(favorite.AccountID))
-		name := string(favorite.Name)
-		amount := strconv.Itoa(int(favorite.Amount))
-		category := string(favorite.Category)
-		accountStr +=  id + ";" + accountID + ";" + name + ";" + amount + ";" + category + "\n"
-		
-		}
-	}
-	if path != "accounts.dump" && path != "payments.dump" && path != "favorites.dump"{
 	for _, acc := range s.accounts {
 		id := strconv.Itoa(int(acc.ID))
 		phone := string(acc.Phone)
 		balance := strconv.Itoa(int(acc.Balance))
 		accountStr +=  id + ";" + phone + ";" + balance + "|"
-	}
 	}
 	accountStr = accountStr[:len(accountStr)-1]
 	_, err = file.Write([]byte(accountStr))
