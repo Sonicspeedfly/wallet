@@ -223,34 +223,61 @@ func (s *Service) PayFromFavorite(favoriteID string) (*types.Payment, error) {
 
 //ExportToFile экспортирует аккаунт в файл
 func (s *Service) ExportToFile(path string) error {
-  file, err := os.Create(path)
-  if err != nil {
-    return err
-  }
-  defer func()  {
-    if err := file.Close(); err != nil {
-      log.Print(err)
-    }
-  }()
-  var id int64
-  var phone string
-  var balance int64
-  for _, account := range s.accounts {
-    id = account.ID
-    phone = string(account.Phone)
-    balance = int64(account.Balance)
-  _, err = file.Write([]byte(strconv.FormatInt(int64(id),10)+(";")+(phone)+(";")+(strconv.FormatInt(int64(balance),10))+("|")))
-  if err != nil {
-    return err
-  }
+	accountStr := ""
+	file, err := os.Create(path)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+			log.Print(cerr)
+		}
+	}()
+	
+	if path == "accounts.dump"{for _, acc := range s.accounts {
+		id := strconv.Itoa(int(acc.ID))
+		phone := string(acc.Phone)
+		balance := strconv.Itoa(int(acc.Balance))
+		accountStr +=  id + ";" + phone + ";" + balance + "\n"
+	}}
+
+	if path == "payments.dump"{for _, payment := range s.payments {
+		id := string(payment.ID)
+		accountID := strconv.Itoa(int(payment.AccountID))
+		amount := strconv.Itoa(int(payment.Amount))
+		category := string(payment.Category)
+		status := string(payment.Status)
+		accountStr +=  id + ";" + accountID + ";" + amount + ";" + category + ";" + status + "\n"
+	}}
+
+	
+	if path == "favorites.dump"{for _, favorite := range s.favorites {
+		id := string(favorite.ID)
+		accountID := strconv.Itoa(int(favorite.AccountID))
+		name := string(favorite.Name)
+		amount := strconv.Itoa(int(favorite.Amount))
+		category := string(favorite.Category)
+		accountStr +=  id + ";" + accountID + ";" + name + ";" + amount + ";" + category + "\n"
+	}}
+	for _, acc := range s.accounts {
+		id := strconv.Itoa(int(acc.ID))
+		phone := string(acc.Phone)
+		balance := strconv.Itoa(int(acc.Balance))
+		accountStr +=  id + ";" + phone + ";" + balance + "|"
+	}
+	accountStr = accountStr[:len(accountStr)-1]
+	_, err = file.Write([]byte(accountStr))
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+	return nil
 }
 
-  return nil
-}
 
+//ImportFromFile импортировать с файла
 func (s *Service) ImportFromFile(path string) error {
-	content := make([]byte, 0)
-	buf := make([]byte, 4)
 	file, err := os.Open(path)
 	if err != nil {
 		log.Print(err)
@@ -261,7 +288,9 @@ func (s *Service) ImportFromFile(path string) error {
 			log.Print(cerr)
 		}
 	}()
-
+	content := make([]byte, 0)
+	buf := make([]byte, 4)
+	
 	for {
 		read, err := file.Read(buf)
 		if err == io.EOF {
@@ -293,5 +322,25 @@ func (s *Service) ImportFromFile(path string) error {
 		s.accounts = append(s.accounts, account)
 	}
 
+	return nil
+}
+
+//Export экспортировать
+func (s *Service) Export(dir string) error {
+	_, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	err = os.Chdir(dir)
+	if err != nil {
+		return err
+	} 
+	if len(s.accounts) > 0 {
+	s.ExportToFile("accounts.dump")
+	if len(s.payments) > 0{
+		s.ExportToFile("payments.dump")
+	if len(s.favorites) > 0{
+	s.ExportToFile("favorites.dump")
+	}}}
 	return nil
 }

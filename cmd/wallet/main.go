@@ -10,8 +10,7 @@ func main() {
 	if err != nil{
 		fmt.Println(wallet.ErrAccountNotFound)
 	}
-	file := svc.ExportToFile("massage.txt")
-	read := svc.ImportFromFile("massage.txt")
-	fmt.Print(file,read)
+	file := svc.Export("./information")
+	fmt.Print(file)
 	fmt.Println(a)
 }
