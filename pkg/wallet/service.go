@@ -7,7 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
+	"io/ioutil"
 	"github.com/Sonicspeedfly/wallet/v1.1.0/pkg/types"
 	"github.com/google/uuid"
 )
@@ -240,7 +240,9 @@ func (s *Service) ExportToFile(path string) error {
 		phone := string(acc.Phone)
 		balance := strconv.Itoa(int(acc.Balance))
 		accountStr +=  id + ";" + phone + ";" + balance + "\n"
-	}}
+		
+	}
+}
 
 	if path == "payments.dump"{for _, payment := range s.payments {
 		id := string(payment.ID)
@@ -249,22 +251,28 @@ func (s *Service) ExportToFile(path string) error {
 		category := string(payment.Category)
 		status := string(payment.Status)
 		accountStr +=  id + ";" + accountID + ";" + amount + ";" + category + ";" + status + "\n"
-	}}
+	}
+}
 
 	
-	if path == "favorites.dump"{for _, favorite := range s.favorites {
+	if path == "favorites.dump"{
+		for _, favorite := range s.favorites {
 		id := string(favorite.ID)
 		accountID := strconv.Itoa(int(favorite.AccountID))
 		name := string(favorite.Name)
 		amount := strconv.Itoa(int(favorite.Amount))
 		category := string(favorite.Category)
 		accountStr +=  id + ";" + accountID + ";" + name + ";" + amount + ";" + category + "\n"
-	}}
+		
+		}
+	}
+	if path != "accounts.dump" && path != "payments.dump" && path != "favorites.dump"{
 	for _, acc := range s.accounts {
 		id := strconv.Itoa(int(acc.ID))
 		phone := string(acc.Phone)
 		balance := strconv.Itoa(int(acc.Balance))
 		accountStr +=  id + ";" + phone + ";" + balance + "|"
+	}
 	}
 	accountStr = accountStr[:len(accountStr)-1]
 	_, err = file.Write([]byte(accountStr))
@@ -306,9 +314,120 @@ func (s *Service) ImportFromFile(path string) error {
 	}
 
 	data := string(content)
-	
+	if path == "account.dump"{
+		content, err := ioutil.ReadFile("accounts.dump")
+		if err != nil {
+			return err
+		}
+		rows := strings.Split(string(content), "\n")
+		for _, row  := range rows {
+			cols := strings.Split(row, ";")
+
+			id, err := strconv.ParseInt(cols[0], 10, 64)
+			if err != nil {
+				return err
+			}
+			balance, err := strconv.ParseInt(cols[2], 10, 64)
+			if err != nil {
+				return err
+			}
+			flag := true
+			for _, v := range s.accounts {
+				if v.ID == id {
+					flag = false
+				}
+			}
+			if flag {
+				account := &types.Account{
+					ID:      id,
+					Phone:   types.Phone(cols[1]),
+					Balance: types.Money(balance),
+				}
+				s.accounts = append(s.accounts, account)
+			}
+		}
+	}
+	if path == "payments.dump"{
+		content, err := ioutil.ReadFile("payments.dump")
+		if err != nil {
+			return err
+		}
+		rows := strings.Split(string(content), "\n")
+		for _, row  := range rows {
+			cols := strings.Split(row, ";")
+
+			id := cols[0]
+			if err != nil {
+				return err
+			}
+			accountID, err := strconv.ParseInt(cols[1], 10, 64)
+			if err != nil {
+				return err
+			}
+			amount, err := strconv.ParseInt(cols[2], 10, 64)
+			if err != nil {
+				return err
+			}
+			flag := true
+			for _, v := range s.payments {
+				if v.ID == id {
+					flag = false
+				}
+			}
+			if flag {
+				data := &types.Payment{
+					ID:        id,
+					AccountID: accountID,
+					Amount:    types.Money(amount),
+					Category:  types.PaymentCategory(cols[3]),
+					Status:    types.PaymentStatus(cols[4]),
+				}
+				s.payments = append(s.payments, data)
+			}
+		}
+	}
+	if path == "favorites.dump"{
+		content, err := ioutil.ReadFile("favorites.dump")
+		if err != nil {
+			return err
+		}
+		rows := strings.Split(string(content), "\n")
+		for _, row  := range rows {
+			cols := strings.Split(row, ";")
+
+			id := cols[0]
+			if err != nil {
+				return err
+			}
+			accountID, err := strconv.ParseInt(cols[1], 10, 64)
+			if err != nil {
+				return err
+			}
+			amount, err := strconv.ParseInt(cols[3], 10, 64)
+			if err != nil {
+				return err
+			}
+			flag := true
+			for _, v := range s.favorites {
+				if v.ID == id {
+					flag = false
+				}
+			}
+			if flag {
+				data := &types.Favorite{
+					ID:        id,
+					AccountID: accountID,
+					Name: 	   cols[2],
+					Amount:    types.Money(amount),
+					Category:  types.PaymentCategory(cols[4]),
+				}
+				s.favorites = append(s.favorites, data)
+			}
+		}
+	}
+	if path != "accounts.dump" && path != "payments.dump" && path != "favorites.dump"{
 	rows := strings.Split(data, "|")
-	for _,row := range rows {
+	for _, row := range rows {
 		cols := strings.Split(row, ";")
 		id, _ := strconv.ParseInt(cols[0],10,64)
 		phone := types.Phone(cols[1])
@@ -321,7 +440,7 @@ func (s *Service) ImportFromFile(path string) error {
 		}
 		s.accounts = append(s.accounts, account)
 	}
-
+	}
 	return nil
 }
 
@@ -341,6 +460,26 @@ func (s *Service) Export(dir string) error {
 		s.ExportToFile("payments.dump")
 	if len(s.favorites) > 0{
 	s.ExportToFile("favorites.dump")
+	}}}
+	return nil
+}
+
+//Import импортирует данные из файла
+func (s *Service) Import(dir string) error {
+	_, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	err = os.Chdir(dir)
+	if err != nil {
+		return err
+	} 
+	if len(s.accounts) > 0 {
+	s.ImportFromFile("accounts.dump")
+	if len(s.payments) > 0{
+		s.ImportFromFile("payments.dump")
+	if len(s.favorites) > 0{
+	s.ImportFromFile("favorites.dump")
 	}}}
 	return nil
 }
