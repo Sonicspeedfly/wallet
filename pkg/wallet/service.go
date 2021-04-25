@@ -37,6 +37,7 @@ type Service struct {
 	accounts      []*types.Account
 	payments      []*types.Payment
 	favorites     []*types.Favorite
+	historys 	  []*types.Payment
 }
 
 // RegisterAccount - метод для регистрация нового прользователя.
@@ -530,7 +531,8 @@ func (s * Service) ExportAccountHistory(accountID int64) ([]types.Payment, error
 	return history, nil
 }
 
-func HistoryToFile(payments []types.Payment, filename string) error {
+func (s *Service )HistoryToFile(filename string) error {
+	payments, err := s.ExportAccountHistory(1)
 	if len(payments) < 1 {
 		return nil
 	}
@@ -544,6 +546,7 @@ func HistoryToFile(payments []types.Payment, filename string) error {
 		}
 	}()
 	fileStr := ""
+	
 	for _, payment := range payments {
 		fileStr += fmt.Sprint(payment.ID) + ";" + fmt.Sprint(payment.AccountID) + ";" + fmt.Sprint(payment.Amount) + ";" + fmt.Sprint(payment.Category) + ";" + fmt.Sprint(payment.Status) + "\n"
 	}
@@ -556,19 +559,20 @@ func (s *Service) HistoryToFiles(payments []types.Payment, dir string, records i
 		return nil
 	}
 	if len(payments) <= records {
-		HistoryToFile(payments, dir + "payments.dump");
-	} else {
+		s.HistoryToFile(dir + "payments.dump");
+	} 
+	if len(payments) > records {
 		counter := 1
 		fIndex := 0
 		lIndex := records
 		for {
-			HistoryToFile(payments[fIndex:lIndex], dir + "payments" + fmt.Sprint(counter) + ".dump");
+			s.HistoryToFile(dir + "payments" + fmt.Sprint(counter) + ".dump");
 			fIndex += records
 			lIndex += records 
 			if lIndex >= len(payments) {
 				if counter * records < len(payments) {
 					lIndex = len(payments) - counter * records
-					HistoryToFile(payments[:lIndex], dir + "payments" + fmt.Sprint(counter+1) + ".dump");
+					s.HistoryToFile(dir + "payments" + fmt.Sprint(counter+1) + ".dump");
 				}
 				break
 			}
