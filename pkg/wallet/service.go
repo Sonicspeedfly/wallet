@@ -286,6 +286,8 @@ func (s *Service) ExportToFile(path string) error {
 
 //ImportFromFile импортировать с файла
 func (s *Service) ImportFromFile(path string) error {
+	content := make([]byte, 0)
+	buf := make([]byte, 4)
 	file, err := os.Open(path)
 	if err != nil {
 		log.Print(err)
@@ -296,13 +298,11 @@ func (s *Service) ImportFromFile(path string) error {
 			log.Print(cerr)
 		}
 	}()
-	content := make([]byte, 0)
-	buf := make([]byte, 4)
-	
+
 	for {
 		read, err := file.Read(buf)
 		if err == io.EOF {
-			content = append(content, buf[:read]...)	
+			content = append(content, buf[:read]...)
 			break
 		}
 
@@ -314,8 +314,50 @@ func (s *Service) ImportFromFile(path string) error {
 	}
 
 	data := string(content)
-	if path == "accounts.dump"{
-		content, err := ioutil.ReadFile("accounts.dump")
+
+	rows := strings.Split(data, "|")
+	for _, row := range rows {
+		cols := strings.Split(row, ";")
+		id, _ := strconv.ParseInt(cols[0], 10, 64)
+		phone := types.Phone(cols[1])
+		balance, _ := strconv.ParseInt(cols[2], 10, 64)
+
+		account := &types.Account{
+			ID:      id,
+			Phone:   phone,
+			Balance: types.Money(balance),
+		}
+		s.accounts = append(s.accounts, account)
+	}
+
+	return nil
+}
+
+//Export экспортировать
+func (s *Service) Export(dir string) error {
+	_, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	err = os.Chdir(dir)
+	if err != nil {
+		return err
+	} 
+	if len(s.accounts) > 0 {
+	s.ExportToFile("accounts.dump")
+	if len(s.payments) > 0{
+		s.ExportToFile("payments.dump")
+	if len(s.favorites) > 0{
+	s.ExportToFile("favorites.dump")
+	}}}
+	return nil
+}
+
+//Import импортирует данные из файла
+func (s *Service) Import(dir string) error {
+	_, err := os.Stat(dir + "/accounts.dump")
+	if err == nil {
+		content, err := ioutil.ReadFile(dir + "/accounts.dump")
 		if err != nil {
 			return err
 		}
@@ -347,8 +389,9 @@ func (s *Service) ImportFromFile(path string) error {
 			}
 		}
 	}
-	if path == "payments.dump"{
-		content, err := ioutil.ReadFile("payments.dump")
+	_, err = os.Stat(dir + "/payments.dump")
+	if err == nil {
+		content, err := ioutil.ReadFile(dir + "/payments.dump")
 		if err != nil {
 			return err
 		}
@@ -385,9 +428,12 @@ func (s *Service) ImportFromFile(path string) error {
 				s.payments = append(s.payments, data)
 			}
 		}
+
 	}
-	if path == "favorites.dump"{
-		content, err := ioutil.ReadFile("favorites.dump")
+
+	_, err = os.Stat(dir + "/favorites.dump")
+	if err == nil {
+		content, err := ioutil.ReadFile(dir + "/favorites.dump")
 		if err != nil {
 			return err
 		}
@@ -425,61 +471,76 @@ func (s *Service) ImportFromFile(path string) error {
 			}
 		}
 	}
-	if path != "accounts.dump" && path != "payments.dump" && path != "favorites.dump"{
-	rows := strings.Split(data, "|")
-	for _, row := range rows {
-		cols := strings.Split(row, ";")
-		id, _ := strconv.ParseInt(cols[0],10,64)
-		phone := types.Phone(cols[1])
-		balance, _ := strconv.ParseInt(cols[2],10,64)
-		
-		account := &types.Account{
-			ID:      id,
-			Phone:   phone,
-			Balance: types.Money(balance),
+	return nil
+}
+
+func (s * Service) ExportAccountHistory(accountID int64) ([]types.Payment, error) {
+	account, err := s.FindAccountByID(accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	history := []types.Payment{}
+	for _, payment := range s.payments {
+		if payment.AccountID == account.ID {
+			curPayment := types.Payment{
+				ID:        payment.ID,
+				AccountID: payment.AccountID,
+				Amount:    payment.Amount,
+				Category:  payment.Category,
+				Status:    payment.Status,
+			}
+			history = append(history, curPayment)
 		}
-		s.accounts = append(s.accounts, account)
 	}
+	return history, nil
+}
+
+func HistoryToFile(payments []types.Payment, filename string) error {
+	if len(payments) < 1 {
+		return nil
+	}
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+			if err != nil {
+				err = cerr
+				log.Print(err)
+			}
+		}
+	}()
+	fileStr := ""
+	for _, payment := range payments {
+		fileStr += fmt.Sprint(payment.ID) + ";" + fmt.Sprint(payment.AccountID) + ";" + fmt.Sprint(payment.Amount) + ";" + fmt.Sprint(payment.Category) + ";" + fmt.Sprint(payment.Status) + "\n"
+	}
+	file.WriteString(fileStr[:len(fileStr)-1])
+	return nil
+}
+
+func (s *Service) HistoryToFiles(payments []types.Payment, dir string, records int) error {
+	if len(payments) < 1 {
+		return nil
+	}
+	if len(payments) <= records {
+		HistoryToFile(payments, dir + "payments.dump");
+	} else {
+		counter := 1
+		fIndex := 0
+		lIndex := records
+		for {
+			HistoryToFile(payments[fIndex:lIndex], dir + "payments" + fmt.Sprint(counter) + ".dump");
+			fIndex += records
+			lIndex += records 
+			if lIndex >= len(payments) {
+				if counter * records < len(payments) {
+					lIndex = len(payments) - counter * records
+					HistoryToFile(payments[:lIndex], dir + "payments" + fmt.Sprint(counter+1) + ".dump");
+				}
+				break
+			}
+			counter++
+		}
 	}
 	return nil
 }
 
-//Export экспортировать
-func (s *Service) Export(dir string) error {
-	_, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	err = os.Chdir(dir)
-	if err != nil {
-		return err
-	} 
-	if len(s.accounts) > 0 {
-	s.ExportToFile("accounts.dump")
-	if len(s.payments) > 0{
-		s.ExportToFile("payments.dump")
-	if len(s.favorites) > 0{
-	s.ExportToFile("favorites.dump")
-	}}}
-	return nil
-}
-
-//Import импортирует данные из файла
-func (s *Service) Import(dir string) error {
-	_, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	err = os.Chdir(dir)
-	if err != nil {
-		return err
-	} 
-	if len(s.accounts) > 0 {
-	s.ImportFromFile("accounts.dump")
-	if len(s.payments) > 0{
-		s.ImportFromFile("payments.dump")
-	if len(s.favorites) > 0{
-	s.ImportFromFile("favorites.dump")
-	}}}
-	return nil
-}
