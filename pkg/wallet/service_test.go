@@ -2,6 +2,8 @@ package wallet
 
 import (
 	"testing"
+
+	"github.com/Sonicspeedfly/wallet/v1.1.0/pkg/types"
 )
 
 func TestService_RegisterAccount_success(t *testing.T) {
@@ -157,5 +159,41 @@ func TestService_Favorite_success_user(t *testing.T) {
 	paymentFavorite, err := svc.PayFromFavorite(favorite.ID)
 	if err != nil {
 		t.Errorf("PayFromFavorite() Error() can't for an favorite(%v): %v", paymentFavorite, err)
+	}
+}
+
+func BenchmarkSumPayments(b *testing.B) {
+	svc := Service{}
+
+	account, err := svc.RegisterAccount("+992000000001")
+	if err != nil {
+		b.Errorf("method RegisterAccount returned not nil error, account => %v", account)
+	}
+
+	err = svc.Deposit(account.ID, 100_00)
+	if err != nil {
+		b.Errorf("method Deposit returned not nil error, error => %v", err)
+	}
+
+	payment, err := svc.Pay(account.ID, 10_00, "auto")
+	if err != nil {
+		b.Errorf("Pay() Error() can't pay for an account(%v): %v", account, err)
+	}
+	favorite, err := svc.FavoritePayment(payment.ID, "megafon")
+	if err != nil {
+		b.Errorf("FavoritePayment() Error() can't for an favorite(%v): %v", favorite, err)
+	}
+
+	paymentFavorite, err := svc.PayFromFavorite(favorite.ID)
+	if err != nil {
+		b.Errorf("PayFromFavorite() Error() can't for an favorite(%v): %v", paymentFavorite, err)
+	}
+
+	want := types.Money(2000)
+	for i := 0; i < b.N; i++ {
+		result := svc.SumPayments(1)
+		if result != want{
+			b.Fatalf("invalid result, got %v, want %v", result, want)
+		}
 	}
 }

@@ -2,15 +2,17 @@ package wallet
 
 import (
 	"errors"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
 	"strings"
-	"io/ioutil"
+	"sync"
+
 	"github.com/Sonicspeedfly/wallet/v1.1.0/pkg/types"
 	"github.com/google/uuid"
-	"fmt"
 )
 
 //ErrPhoneRegistered - телефон уже регитрирован
@@ -577,4 +579,42 @@ func (s *Service) HistoryToFiles(payments []types.Payment, dir string, records i
 		}
 	}
 	return nil
+}
+
+func (s *Service) SumPayments(gorutines int) types.Money{
+	wg := sync.WaitGroup{}
+	wg.Add(gorutines)
+	mu := sync.Mutex{}
+	sum := types.Money(0)
+	if gorutines < 2 {
+		go func() {
+			defer wg.Done()
+			val := types.Money(0)
+			for _, pay := range s.payments {
+				val += pay.Amount
+			}
+			mu.Lock()
+			sum += val
+			defer mu.Unlock()
+			
+		}()
+	    
+	}
+	if gorutines > 1{
+	for i := 0; i<gorutines; i++{
+	go func() {
+		defer wg.Done()
+		val := types.Money(0)
+		for _, pay := range s.payments {
+			val += pay.Amount
+		}
+		mu.Lock()
+		sum += val
+		defer mu.Unlock()
+	    
+	}()
+	}
+	}
+	wg.Wait()
+	return sum
 }
