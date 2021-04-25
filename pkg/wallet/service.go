@@ -314,7 +314,7 @@ func (s *Service) ImportFromFile(path string) error {
 	}
 
 	data := string(content)
-	if path == "account.dump"{
+	if path == "accounts.dump"{
 		content, err := ioutil.ReadFile("accounts.dump")
 		if err != nil {
 			return err
