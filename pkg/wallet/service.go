@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"github.com/Sonicspeedfly/wallet/v1.1.0/pkg/types"
 	"github.com/google/uuid"
+	"fmt"
 )
 
 //ErrPhoneRegistered - телефон уже регитрирован
