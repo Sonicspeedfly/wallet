@@ -500,6 +500,7 @@ func (s * Service) ExportAccountHistory(accountID int64) ([]types.Payment, error
 	return history, nil
 }
 
+//HistoryToFile создаёт информацию о платеже в строки для файла
 func HistoryToFile(payments []types.Payment, filename string) error {
 	if len(payments) < 1 {
 		return nil
@@ -521,6 +522,7 @@ func HistoryToFile(payments []types.Payment, filename string) error {
 	return nil
 }
 
+//HistoryToFiles помешает по record данные платежей в файл
 func (s *Service) HistoryToFiles(payments []types.Payment, dir string, records int) error {
 	if len(payments) < 1 {
 		return nil
@@ -585,4 +587,54 @@ func (s *Service) SumPayments(gorutines int) types.Money{
 	}
 	wg.Wait()
 	return sum
+}
+
+//FilterPayments фильтрует данные по accountID через gorutines
+func (s *Service) FilterPayments(accountID int64, gorutines int) ([]types.Payment, error) {
+	wg := sync.WaitGroup{}
+	wg.Add(gorutines)
+	mu := sync.Mutex{}
+	var payments []types.Payment
+	if gorutines < 2 {
+		go func() {
+			defer wg.Done()
+			for _, pay := range s.payments {
+				if accountID == pay.AccountID{
+					accs := types.Payment{
+						ID: pay.ID,
+						AccountID: pay.AccountID,
+						Amount: pay.Amount,
+						Category: pay.Category,
+						Status: pay.Status,
+					}
+					payments = append(payments, accs)
+				}
+			}
+			mu.Lock()
+			defer mu.Unlock()
+			}()
+		}
+			if gorutines > 1{
+				for i := 0; i<gorutines; i++{
+					go func() {
+						defer wg.Done()
+						for _, pay := range s.payments {
+							if accountID == pay.AccountID{
+								accs := types.Payment{
+									ID: pay.ID,
+									AccountID: pay.AccountID,
+									Amount: pay.Amount,
+									Category: pay.Category,
+									Status: pay.Status,
+								}
+								payments = append(payments, accs)
+							}
+						}
+						mu.Lock()
+						defer mu.Unlock()
+						}()
+				}
+}
+
+return payments, nil
 }
