@@ -306,3 +306,40 @@ func BenchmarkSumPayments(b *testing.B) {
 		}
 	}
 }
+
+func BenchmarkFilterPayments(b *testing.B) {
+	svc := Service{}
+
+	account, err := svc.RegisterAccount("+992000000001")
+	if err != nil {
+		b.Errorf("method RegisterAccount returned not nil error, account => %v", account)
+	}
+
+	err = svc.Deposit(account.ID, 100_00)
+	if err != nil {
+		b.Errorf("method Deposit returned not nil error, error => %v", err)
+	}
+
+	payment, err := svc.Pay(account.ID, 10_00, "auto")
+	if err != nil {
+		b.Errorf("Pay() Error() can't pay for an account(%v): %v", account, err)
+	}
+	favorite, err := svc.FavoritePayment(payment.ID, "megafon")
+	if err != nil {
+		b.Errorf("FavoritePayment() Error() can't for an favorite(%v): %v", favorite, err)
+	}
+
+	paymentFavorite, err := svc.PayFromFavorite(favorite.ID)
+	if err != nil {
+		b.Errorf("PayFromFavorite() Error() can't for an favorite(%v): %v", paymentFavorite, err)
+	}
+
+	want := (payment.AccountID)
+	for i := 0; i < b.N; i++ {
+		result1, err := svc.FilterPayments(1,1)
+		result := payment.AccountID
+		if result != want{
+			b.Fatalf("invalid result, got %v, got1 %v, want %v, err %v", result, result1, want, err)
+		}
+	}	
+}
