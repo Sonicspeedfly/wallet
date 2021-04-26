@@ -635,7 +635,7 @@ func (s *Service) FilterPayments(accountID int64, gorutines int) ([]types.Paymen
 						}()
 				}
 }
-if len(payments) == 0 {
+if payments == nil {
 	return nil, ErrPaymentNotFound
 }
 return payments, nil
