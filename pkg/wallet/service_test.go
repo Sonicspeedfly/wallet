@@ -298,7 +298,7 @@ func BenchmarkSumPayments(b *testing.B) {
 		b.Errorf("PayFromFavorite() Error() can't for an favorite(%v): %v", paymentFavorite, err)
 	}
 
-	want := types.Money(1000)
+	want := types.Money(2000)
 	for i := 0; i < b.N; i++ {
 		result := svc.SumPayments(1)
 		if result != want{
