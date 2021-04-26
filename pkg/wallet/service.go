@@ -591,6 +591,10 @@ func (s *Service) SumPayments(gorutines int) types.Money{
 
 //FilterPayments фильтрует данные по accountID через gorutines
 func (s *Service) FilterPayments(accountID int64, gorutines int) ([]types.Payment, error) {
+	_, err := s.FindAccountByID(accountID)
+	if err != nil {
+		return nil, err
+	}
 	wg := sync.WaitGroup{}
 	wg.Add(gorutines)
 	mu := sync.Mutex{}
