@@ -548,6 +548,7 @@ func (s *Service) HistoryToFiles(payments []types.Payment, dir string, records i
 	return nil
 }
 
+//SumPayments суммирует по горутине
 func (s *Service) SumPayments(gorutines int) types.Money{
 	wg := sync.WaitGroup{}
 	wg.Add(gorutines)
@@ -573,10 +574,10 @@ func (s *Service) SumPayments(gorutines int) types.Money{
 		defer wg.Done()
 		val := types.Money(0)
 		for _, pay := range s.payments {
-			val = pay.Amount
+			val += pay.Amount
 		}
 		mu.Lock()
-		sum += val
+		sum += val / 10
 		defer mu.Unlock()
 	    
 	}()
