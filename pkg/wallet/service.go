@@ -558,7 +558,7 @@ func (s *Service) SumPayments(gorutines int) types.Money{
 			defer wg.Done()
 			val := types.Money(0)
 			for _, pay := range s.payments {
-				val += pay.Amount
+				val = pay.Amount
 			}
 			mu.Lock()
 			sum += val
