@@ -640,51 +640,12 @@ func (s *Service) FilterPaymentsByFn(filter func(payment types.Payment) bool, go
         Category:  payment.Category,
         Status:    payment.Status,
       })
-    }
-  }
-  mu := sync.Mutex{}
-  result := []types.Payment{}
-  if goroutines < 2 {
-    go func() {
-      defer wg.Done()
-      filtered := []types.Payment{}
-      for _, payment := range s.payments {
-        if filter(*payment) {
-          filtered = append(filtered, types.Payment{
-            ID:        payment.ID,
-            AccountID: payment.AccountID,
-            Amount:    payment.Amount,
-            Category:  payment.Category,
-            Status:    payment.Status,
-          })
-        }
+	  _, err := s.FilterPayments(payment.AccountID, goroutines)
+	  if err != nil{
+		  return nil, err
 	  }
-	  mu.Lock()
-      result = append(result, filtered...)
-      defer mu.Unlock()
-	}()
 	}
-	  if goroutines>1{
-	  for i := 0; i<goroutines*2; i++{
-	  go func() {
-		defer wg.Done()
-		filtered := []types.Payment{}
-		for _, payment := range s.payments {
-		  if filter(*payment) {
-			filtered = append(filtered, types.Payment{
-			  ID:        payment.ID,
-			  AccountID: payment.AccountID,
-			  Amount:    payment.Amount,
-			  Category:  payment.Category,
-			  Status:    payment.Status,
-			})
-		  }
-		}
-      mu.Lock()
-      result = append(result, filtered...)
-      defer mu.Unlock()
-    }()
   }
-}
+  
   return filteredPayments, nil
 }
