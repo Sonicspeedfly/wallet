@@ -611,7 +611,7 @@ func (s *Service) FilterPayments(accountID int64, gorutines int) ([]types.Paymen
 			}()
 		}
 			if gorutines > 1{
-				for i := 0; i<gorutines; i++{
+				for i := 0; i<gorutines*2; i++{
 					go func() {
 						defer wg.Done()
 						for _, pay := range payments {
