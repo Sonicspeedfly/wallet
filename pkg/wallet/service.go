@@ -591,28 +591,20 @@ func (s *Service) SumPayments(gorutines int) types.Money{
 
 //FilterPayments фильтрует данные по accountID через gorutines
 func (s *Service) FilterPayments(accountID int64, gorutines int) ([]types.Payment, error) {
-	_, err := s.FindAccountByID(accountID)
-	if err != nil {
+	payments, err := s.ExportAccountHistory(accountID)
+	if err != nil{
 		return nil, err
 	}
+	payment := []types.Payment{}
 	wg := sync.WaitGroup{}
 	wg.Add(gorutines)
 	mu := sync.Mutex{}
-	var payments []types.Payment
 	if gorutines < 2 {
 		go func() {
 			defer wg.Done()
-			for _, pay := range s.payments {
-				if accountID == pay.AccountID{
-					accs := types.Payment{
-						ID: pay.ID,
-						AccountID: pay.AccountID,
-						Amount: pay.Amount,
-						Category: pay.Category,
-						Status: pay.Status,
-					}
-					payments = append(payments, accs)
-				}
+			for _, pay := range payments {
+				pay.Amount = s.SumPayments(gorutines)
+				payment = append(payment, pay)
 			}
 			mu.Lock()
 			defer mu.Unlock()
@@ -622,18 +614,10 @@ func (s *Service) FilterPayments(accountID int64, gorutines int) ([]types.Paymen
 				for i := 0; i<gorutines; i++{
 					go func() {
 						defer wg.Done()
-						for _, pay := range s.payments {
-							if accountID == pay.AccountID{
-								accs := types.Payment{
-									ID: pay.ID,
-									AccountID: pay.AccountID,
-									Amount: pay.Amount,
-									Category: pay.Category,
-									Status: pay.Status,
-								}
-								payments = append(payments, accs)
-							}
-						}
+						for _, pay := range payments {
+						pay.Amount = s.SumPayments(gorutines)
+						payment = append(payment, pay)
+					}
 						mu.Lock()
 						defer mu.Unlock()
 						}()
