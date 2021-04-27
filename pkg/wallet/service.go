@@ -550,83 +550,115 @@ func (s *Service) HistoryToFiles(payments []types.Payment, dir string, records i
 	return nil
 }
 
-//SumPayments суммирует по горутине
-func (s *Service) SumPayments(gorutines int) types.Money{
-	wg := sync.WaitGroup{}
-	wg.Add(gorutines)
-	mu := sync.Mutex{}
-	sum := types.Money(0)
-	if gorutines < 2 {
-		go func() {
-			defer wg.Done()
-			val := types.Money(0)
-			for _, pay := range s.payments {
-				val += pay.Amount
-			}
-			mu.Lock()
-			sum += val
-			defer mu.Unlock()
-			
-		}()
-	    
-	}
-	if gorutines > 1{
-	for i := 0; i<gorutines; i++{
-	go func() {
-		defer wg.Done()
-		val := types.Money(0)
-		for _, pay := range s.payments {
-			val += pay.Amount
+// SumPayments summation of all payments in a competitive mode
+func (s *Service) SumPayments(goroutines int) types.Money {
+	result := types.Money(0)
+	if goroutines == 0 || goroutines == 1 {
+		for _, payment := range s.payments {
+			result += payment.Amount
 		}
-		mu.Lock()
-		sum += val / 10
-		defer mu.Unlock()
-	    
-	}()
+		return result
 	}
+
+	wg := sync.WaitGroup{}
+
+	mu := sync.Mutex{}
+	paymentsOnGoroutine := len(s.payments) / goroutines
+	count := 0
+	for i := 0; i < len(s.payments); i++ {
+		if i == len(s.payments)-1 {
+			wg.Add(1)
+			go func(count, i int) {
+				defer wg.Done()
+				tmp := types.Money(0)
+				for _, payment := range s.payments[count:] {
+					tmp += payment.Amount
+				}
+				mu.Lock()
+				defer mu.Unlock()
+				result += tmp
+			}(count, i)
+		}
+
+		if i-count == paymentsOnGoroutine {
+			wg.Add(1)
+			go func(count, i int) {
+				defer wg.Done()
+				tmp := types.Money(0)
+				for _, payment := range s.payments[count:i] {
+					tmp += payment.Amount
+				}
+				mu.Lock()
+				defer mu.Unlock()
+				result += tmp
+			}(count, i)
+			count += paymentsOnGoroutine
+		}
 	}
 	wg.Wait()
-	return sum
+	return result
 }
 
-//FilterPayments фильтрует данные по accountID через gorutines
-func (s *Service) FilterPayments(accountID int64, gorutines int) ([]types.Payment, error) {
-	payments, err := s.ExportAccountHistory(accountID)
-	if err != nil{
+// FilterPayments account payment filter
+func (s *Service) FilterPayments(accountID int64, goroutines int) ([]types.Payment, error) {
+
+	if goroutines == 0 || goroutines == 1 {
+		payments, err := s.ExportAccountHistory(accountID)
+		if err != nil {
+			return nil, err
+		}
+		return payments, nil
+	}
+
+	_, err := s.FindAccountByID(accountID)
+	if err != nil {
 		return nil, err
 	}
-	payment := []types.Payment{}
+
+	payments := []types.Payment{}
 	wg := sync.WaitGroup{}
-	wg.Add(gorutines)
 	mu := sync.Mutex{}
-	if gorutines < 2 {
-		go func() {
-			defer wg.Done()
-			for _, pay := range payments {
-				pay.Amount = s.SumPayments(gorutines)
-				payment = append(payment, pay)
-			}
-			mu.Lock()
-			defer mu.Unlock()
-			}()
-		}
-			if gorutines > 1{
-				for i := 0; i<gorutines*2; i++{
-					go func() {
-						defer wg.Done()
-						for _, pay := range payments {
-						pay.Amount = s.SumPayments(gorutines)
-						payment = append(payment, pay)
+	paymentsOnGoroutine := len(s.payments) / goroutines
+	count := 0
+	for i := 0; i < len(s.payments); i++ {
+		if i == len(s.payments)-1 {
+			wg.Add(1)
+			go func(count, i int) {
+				defer wg.Done()
+				tmp := []types.Payment{}
+				for _, payment := range s.payments[count:] {
+					if payment.AccountID == accountID {
+						tmp = append(tmp, *payment)
 					}
-						mu.Lock()
-						defer mu.Unlock()
-						}()
 				}
-}
-return payments, nil
+				mu.Lock()
+				defer mu.Unlock()
+				payments = append(payments, tmp...)
+			}(count, i)
+		}
+
+		if i-count == paymentsOnGoroutine {
+			wg.Add(1)
+			go func(count, i int) {
+				defer wg.Done()
+				tmp := []types.Payment{}
+				for _, payment := range s.payments[count:i] {
+					if payment.AccountID == accountID {
+						tmp = append(tmp, *payment)
+					}
+				}
+				mu.Lock()
+				defer mu.Unlock()
+				payments = append(payments, tmp...)
+			}(count, i)
+			count += paymentsOnGoroutine
+		}
+	}
+	wg.Wait()
+	return payments, nil
 }
 
-//FilterPaymentsByFn возвращает payment и суммирует его по условию true
+// FilterPaymentsByFn filter payments using filter function
 func (s *Service) FilterPaymentsByFn(filter func(payment types.Payment) bool, goroutines int) ([]types.Payment, error) {
 	payments := []types.Payment{}
 
