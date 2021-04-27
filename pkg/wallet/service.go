@@ -659,6 +659,9 @@ func (s *Service) FilterPaymentsByFn(filter func(payment types.Payment) bool, go
           })
         }
 	  }
+	  mu.Lock()
+      result = append(result, filtered...)
+      defer mu.Unlock()
 	}()
 	}
 	  if goroutines>1{
