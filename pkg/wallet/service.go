@@ -625,3 +625,44 @@ func (s *Service) FilterPayments(accountID int64, gorutines int) ([]types.Paymen
 }
 return payments, nil
 }
+
+//FilterPaymentsByFn возвращает payment и суммирует его по условию true
+func (s *Service) FilterPaymentsByFn(filter func(payment types.Payment) bool, goroutines int) ([]types.Payment, error) {
+  wg := sync.WaitGroup{}
+  wg.Add(goroutines)
+  filteredPayments := []types.Payment{}
+  for _, payment := range s.payments {
+    if filter(*payment) {
+      filteredPayments = append(filteredPayments, types.Payment{
+        ID:        payment.ID,
+        AccountID: payment.AccountID,
+        Amount:    payment.Amount,
+        Category:  payment.Category,
+        Status:    payment.Status,
+      })
+    }
+  }
+  mu := sync.Mutex{}
+  result := []types.Payment{}
+  if goroutines < 2 {
+    go func() {
+      defer wg.Done()
+      filtered := []types.Payment{}
+      for _, payment := range s.payments {
+        if filter(*payment) {
+          filtered = append(filtered, types.Payment{
+            ID:        payment.ID,
+            AccountID: payment.AccountID,
+            Amount:    payment.Amount,
+            Category:  payment.Category,
+            Status:    payment.Status,
+          })
+        }
+      }
+      mu.Lock()
+      result = append(result, filtered...)
+      defer mu.Unlock()
+    }()
+  }
+  return filteredPayments, nil
+}
