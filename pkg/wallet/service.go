@@ -713,3 +713,46 @@ func (s *Service) FilterPaymentsByFn(filter func(payment types.Payment) bool, go
 
 	return payments, nil
 }
+
+//SumPaymentsWithProgress суммирует через каналы платежи
+func (s *Service) SumPaymentsWithProgress() <-chan types.Progress {
+	piecePayments := 100_000
+	bufForChan := len(s.payments) + 1
+	ch := make(chan types.Progress, bufForChan)
+	defer close(ch)
+	mu := sync.Mutex{}
+	wg := sync.WaitGroup{}
+
+	counter := 0
+	for {
+		start := counter * piecePayments
+		end := (counter + 1) * piecePayments
+
+		if end > len(s.payments) {
+			end = len(s.payments)
+		}
+
+		wg.Add(1)
+		go func(ch chan types.Progress, data []*types.Payment) {
+			defer wg.Done()
+			progr := types.Progress{}
+			
+			for _, pay := range data {
+				progr.Result += pay.Amount
+			}
+			progr.Part = 1
+			mu.Lock()
+			ch <- progr
+			mu.Unlock()
+		}(ch, s.payments[start:end])
+
+		if end == len(s.payments) {
+			break
+		}
+
+		counter++
+	}
+	wg.Wait()
+	close(ch)
+	return ch
+}

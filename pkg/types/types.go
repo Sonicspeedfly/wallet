@@ -43,3 +43,9 @@ type Favorite struct {
 	Amount    Money
 	Category  PaymentCategory
 }
+
+// Progress представляет собой информацию о прогрессе
+type Progress struct {
+	Part   int
+	Result Money
+}
